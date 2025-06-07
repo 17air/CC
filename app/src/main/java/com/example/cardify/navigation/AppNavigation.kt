@@ -28,6 +28,7 @@ import com.example.cardify.models.LoginViewModel
 import com.example.cardify.models.MainScreenViewModel
 import com.example.cardify.cardbook.CardBookViewModel
 import com.example.cardify.ui.screens.CardBookScreen
+import com.example.cardify.ui.screens.CardDetailScreen
 import com.example.cardify.ui.screens.AddExistingScreen
 import com.example.cardify.ui.screens.EditCardScreen
 import com.example.cardify.ui.screens.OcrResultScreen
@@ -288,7 +289,15 @@ val token = tokenManager.getToken()
             }
 
             composable(Screen.CardBook.route) {
-                CardBookScreen(navController = navController)
+                CardBookScreen(navController = navController, viewModel = cardBookViewModel)
+            }
+
+            composable(
+                route = Screen.CardDetail.route,
+                arguments = listOf(navArgument("cardId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val cardId = backStackEntry.arguments?.getString("cardId") ?: ""
+                CardDetailScreen(navController = navController, cardId = cardId)
             }
 
             composable(

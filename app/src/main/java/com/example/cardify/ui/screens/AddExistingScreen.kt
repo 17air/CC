@@ -1,7 +1,8 @@
 package com.example.cardify.ui.screens
 
 import android.Manifest
-import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import android.net.Uri
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,22 +51,22 @@ fun AddExistingScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            if (bitmap != null) {
-                com.example.cardify.ocr.CapturedImageHolder.bitmap = bitmap
-                navController.navigate(com.example.cardify.navigation.Screen.OcrResult.route)
-            }
+            navController.navigate(
+                com.example.cardify.navigation.Screen.AddImageSelect.createRoute(it.toString())
+            )
         }
     }
-    
+
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        bitmap?.let {
-            com.example.cardify.ocr.CapturedImageHolder.bitmap = it
-            navController.navigate(com.example.cardify.navigation.Screen.OcrResult.route)
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            photoUri?.let { uri ->
+                navController.navigate(
+                    com.example.cardify.navigation.Screen.AddImageSelect.createRoute(uri.toString())
+                )
+            }
         }
     }
 
@@ -69,7 +74,7 @@ fun AddExistingScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            cameraLauncher.launch(null)
+            photoUri?.let { cameraLauncher.launch(it) }
         }
     }
     
@@ -124,8 +129,10 @@ fun AddExistingScreen(
 
             Button(onClick = {
                 val permission = android.Manifest.permission.CAMERA
+                val file = File.createTempFile("camera_", ".jpg", context.cacheDir)
+                photoUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
                 if (ContextCompat.checkSelfPermission(context, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    cameraLauncher.launch(null)
+                    photoUri?.let { cameraLauncher.launch(it) }
                 } else {
                     permissionLauncher.launch(permission)
                 }
