@@ -288,7 +288,7 @@ val token = tokenManager.getToken()
             }
 
             composable(Screen.CardBook.route) {
-                CardBookScreen(navController = navController)
+                CardBookScreen(navController = navController, viewModel = cardBookViewModel)
             }
 
             composable(
